@@ -45,6 +45,15 @@ type GetResponse struct {
 
 func parseUUID(r *http.Request, allowKeys bool) (string, error, int) {
 	id := r.URL.Query().Get("uuid")
+
+	// IX AMP traffic used /pcreative caching in Arc2 and relies on Prebid Cache
+	// for creative caching in Arc3. During the initial migration, we will use `unk2`
+	// in addition to `uuid`.
+	// TODO(PB-617): Clean up this alias when possible.
+	if id == "" {
+		id = r.URL.Query().Get("unk2")
+	}
+
 	if id == "" {
 		return "", utils.MissingKeyError{}, http.StatusBadRequest
 	}

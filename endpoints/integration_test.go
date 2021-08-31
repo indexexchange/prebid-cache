@@ -18,11 +18,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func doMockGet(t *testing.T, router *httprouter.Router, id string) *httptest.ResponseRecorder {
+func doMockGet(t *testing.T, router *httprouter.Router, id string, useUnk2Alias bool) *httptest.ResponseRecorder {
 	requestRecorder := httptest.NewRecorder()
 
 	body := new(bytes.Buffer)
-	getReq, err := http.NewRequest("GET", "/cache"+"?uuid="+id, body)
+
+	var getUrl string
+	if useUnk2Alias {
+		getUrl = "/cache?unk2="
+	} else {
+		getUrl = "/cache?uuid="
+	}
+
+	getReq, err := http.NewRequest("GET", getUrl+id, body)
 	if err != nil {
 		t.Fatalf("Failed to create a GET request: %v", err)
 		return requestRecorder
@@ -72,7 +80,7 @@ func expectStored(t *testing.T, putBody string, expectedGet string, expectedMime
 		return
 	}
 
-	getResults := doMockGet(t, router, uuid)
+	getResults := doMockGet(t, router, uuid, false)
 	if getResults.Code != http.StatusOK {
 		t.Fatalf("Get command failed with status: %d", getResults.Code)
 		return
@@ -178,8 +186,9 @@ func TestGetHandler(t *testing.T) {
 		lvl logrus.Level
 	}
 	type testInput struct {
-		uuid      string
-		allowKeys bool
+		uuid         string
+		allowKeys    bool
+		useUnk2Alias bool
 	}
 	type testOutput struct {
 		responseCode int
@@ -269,6 +278,15 @@ func TestGetHandler(t *testing.T) {
 				logEntries:   []logEntry{},
 			},
 		},
+		{
+			"Valid 36 char long UUID in unk2 param returns valid XML. Don't return nor log error",
+			testInput{uuid: "36-char-key-maps-to-actual-xml-value", useUnk2Alias: true},
+			testOutput{
+				responseCode: http.StatusOK,
+				responseBody: "<tag>xml data here</tag>",
+				logEntries:   []logEntry{},
+			},
+		},
 	}
 
 	// Lower Log Treshold so we can see DebugLevel entries in our mock logrus log
@@ -291,7 +309,7 @@ func TestGetHandler(t *testing.T) {
 		router.GET("/cache", NewGetHandler(backend, test.in.allowKeys))
 
 		// Run test
-		getResults := doMockGet(t, router, test.in.uuid)
+		getResults := doMockGet(t, router, test.in.uuid, test.in.useUnk2Alias)
 
 		// Assert server response and status code
 		assert.Equal(t, test.out.responseCode, getResults.Code, test.desc)
@@ -372,7 +390,7 @@ func TestMultiPutRequestGotStored(t *testing.T) {
 
 	for i, resp := range parsed.Responses {
 		// Get value for this UUID. It is supposed to have been stored
-		getResult := doMockGet(t, router, resp.UUID)
+		getResult := doMockGet(t, router, resp.UUID, false)
 
 		// Assertions
 		assert.Equalf(t, http.StatusOK, getResult.Code, "Description: %s \n Multi-element put failed to store:%s \n", testCases[i].description, testCases[i].elemToPut)
