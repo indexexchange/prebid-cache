@@ -54,6 +54,16 @@ func parseUUID(r *http.Request, allowKeys bool) (string, error, int) {
 		id = r.URL.Query().Get("unk2")
 	}
 
+	// Until Verizon accepts Audit URLs through the `iurl` field, Arc3 will create
+	// two entries for their creatives, an actual creative, and an audit creative.
+	// If the `ap` (auction price) URL parameter is AUDIT, we should return the
+	// audit creative in the `iurl` cache key.
+	// TODO(PB-620): Clean up this special AUDIT logic.
+	auction_price := r.URL.Query().Get("ap")
+	if auction_price == "AUDIT" {
+		id = r.URL.Query().Get("iurl")
+	}
+
 	if id == "" {
 		return "", utils.MissingKeyError{}, http.StatusBadRequest
 	}
