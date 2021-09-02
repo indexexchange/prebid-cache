@@ -18,16 +18,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func doMockGet(t *testing.T, router *httprouter.Router, id string, useUnk2Alias bool) *httptest.ResponseRecorder {
+const (
+	uuidFormat      = 0
+	unk2Format      = 1
+	uuidAuditFormat = 2
+	iurlAuditFormat = 3
+)
+
+func doMockGet(t *testing.T, router *httprouter.Router, id string, urlFormat int) *httptest.ResponseRecorder {
 	requestRecorder := httptest.NewRecorder()
 
 	body := new(bytes.Buffer)
 
 	var getUrl string
-	if useUnk2Alias {
-		getUrl = "/cache?unk2="
-	} else {
+	if urlFormat == uuidFormat {
 		getUrl = "/cache?uuid="
+	} else if urlFormat == unk2Format {
+		getUrl = "/cache?unk2="
+	} else if urlFormat == uuidAuditFormat {
+		getUrl = "/cache?iurl=1234&ap=123&uuid="
+	} else if urlFormat == iurlAuditFormat {
+		getUrl = "/cache?uuid=1234&ap=AUDIT&iurl="
+	} else {
+		t.Fatalf("Failed to create GET request with URL format: %v", urlFormat)
 	}
 
 	getReq, err := http.NewRequest("GET", getUrl+id, body)
@@ -80,7 +93,7 @@ func expectStored(t *testing.T, putBody string, expectedGet string, expectedMime
 		return
 	}
 
-	getResults := doMockGet(t, router, uuid, false)
+	getResults := doMockGet(t, router, uuid, uuidFormat)
 	if getResults.Code != http.StatusOK {
 		t.Fatalf("Get command failed with status: %d", getResults.Code)
 		return
@@ -186,9 +199,9 @@ func TestGetHandler(t *testing.T) {
 		lvl logrus.Level
 	}
 	type testInput struct {
-		uuid         string
-		allowKeys    bool
-		useUnk2Alias bool
+		uuid      string
+		allowKeys bool
+		urlFormat int
 	}
 	type testOutput struct {
 		responseCode int
@@ -280,7 +293,25 @@ func TestGetHandler(t *testing.T) {
 		},
 		{
 			"Valid 36 char long UUID in unk2 param returns valid XML. Don't return nor log error",
-			testInput{uuid: "36-char-key-maps-to-actual-xml-value", useUnk2Alias: true},
+			testInput{uuid: "36-char-key-maps-to-actual-xml-value", urlFormat: unk2Format},
+			testOutput{
+				responseCode: http.StatusOK,
+				responseBody: "<tag>xml data here</tag>",
+				logEntries:   []logEntry{},
+			},
+		},
+		{
+			"Valid 36 char long UUID in uuid param with non-audit ap returns valid XML. Don't return nor log error",
+			testInput{uuid: "36-char-key-maps-to-actual-xml-value", urlFormat: uuidAuditFormat},
+			testOutput{
+				responseCode: http.StatusOK,
+				responseBody: "<tag>xml data here</tag>",
+				logEntries:   []logEntry{},
+			},
+		},
+		{
+			"Valid 36 char long UUID in uuid param with audit ap returns valid XML. Don't return nor log error",
+			testInput{uuid: "36-char-key-maps-to-actual-xml-value", urlFormat: iurlAuditFormat},
 			testOutput{
 				responseCode: http.StatusOK,
 				responseBody: "<tag>xml data here</tag>",
@@ -309,7 +340,7 @@ func TestGetHandler(t *testing.T) {
 		router.GET("/cache", NewGetHandler(backend, test.in.allowKeys))
 
 		// Run test
-		getResults := doMockGet(t, router, test.in.uuid, test.in.useUnk2Alias)
+		getResults := doMockGet(t, router, test.in.uuid, test.in.urlFormat)
 
 		// Assert server response and status code
 		assert.Equal(t, test.out.responseCode, getResults.Code, test.desc)
@@ -390,7 +421,7 @@ func TestMultiPutRequestGotStored(t *testing.T) {
 
 	for i, resp := range parsed.Responses {
 		// Get value for this UUID. It is supposed to have been stored
-		getResult := doMockGet(t, router, resp.UUID, false)
+		getResult := doMockGet(t, router, resp.UUID, uuidFormat)
 
 		// Assertions
 		assert.Equalf(t, http.StatusOK, getResult.Code, "Description: %s \n Multi-element put failed to store:%s \n", testCases[i].description, testCases[i].elemToPut)
