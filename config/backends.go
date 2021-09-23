@@ -45,13 +45,15 @@ const (
 )
 
 type Aerospike struct {
-	DefaultTTL int      `mapstructure:"default_ttl_seconds"`
-	Host       string   `mapstructure:"host"`
-	Hosts      []string `mapstructure:"hosts"`
-	Port       int      `mapstructure:"port"`
-	Namespace  string   `mapstructure:"namespace"`
-	User       string   `mapstructure:"user"`
-	Password   string   `mapstructure:"password"`
+	DefaultTTL int               `mapstructure:"default_ttl_seconds"`
+	Host       string            `mapstructure:"host"`
+	Hosts      []string          `mapstructure:"hosts"`
+	Port       int               `mapstructure:"port"`
+	Namespace  string            `mapstructure:"namespace"`
+	DefaultSet string            `mapstructure:"default_set"`
+	User       string            `mapstructure:"user"`
+	Password   string            `mapstructure:"password"`
+	CustomSets map[string]string `mapstructure:"custom_sets"`
 }
 
 func (cfg *Aerospike) validateAndLog() error {
@@ -65,10 +67,18 @@ func (cfg *Aerospike) validateAndLog() error {
 	if cfg.DefaultTTL > 0 {
 		log.Infof("config.backend.aerospike.default_ttl_seconds: %d. Note that this configuration option is being deprecated in favor of config.request_limits.max_ttl_seconds", cfg.DefaultTTL)
 	}
+
+	if cfg.DefaultSet == "" {
+		log.Infof("config.backend.aerospike.default_set was not set. Defaulting to 'uuid'")
+		cfg.DefaultSet = "uuid"
+	}
+
 	log.Infof("config.backend.aerospike.host: %s", cfg.Host)
 	log.Infof("config.backend.aerospike.hosts: %v", cfg.Hosts)
 	log.Infof("config.backend.aerospike.port: %d", cfg.Port)
 	log.Infof("config.backend.aerospike.namespace: %s", cfg.Namespace)
+	log.Infof("config.backend.aerospike.default_set: %s", cfg.DefaultSet)
+	log.Infof("config.backend.aerospike.custom_sets: %v", cfg.CustomSets)
 	log.Infof("config.backend.aerospike.user: %s", cfg.User)
 
 	return nil

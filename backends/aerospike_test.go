@@ -26,7 +26,7 @@ func NewErrorProneAerospikeClient(funcName string) *errorProneAerospikeClient {
 	}
 }
 
-func (c *errorProneAerospikeClient) NewUuidKey(namespace string, key string) (*as.Key, error) {
+func (c *errorProneAerospikeClient) NewUuidKey(namespace string, set string, key string) (*as.Key, error) {
 	if c.errorThrowingFunction == "TEST_KEY_GEN_ERROR" {
 		return nil, as_types.NewAerospikeError(as_types.NOT_AUTHENTICATED)
 	}
@@ -89,7 +89,7 @@ func (c *goodAerospikeClient) Put(policy *as.WritePolicy, aeKey *as.Key, binMap 
 	return as_types.NewAerospikeError(as_types.KEY_MISMATCH)
 }
 
-func (c *goodAerospikeClient) NewUuidKey(namespace string, key string) (*as.Key, error) {
+func (c *goodAerospikeClient) NewUuidKey(namespace string, setName string, key string) (*as.Key, error) {
 	return as.NewKey(namespace, setName, key)
 }
 
@@ -108,8 +108,9 @@ func TestNewAerospikeBackend(t *testing.T) {
 		{
 			desc: "Unable to connect hosts fakeTestUrl panic and log fatal error when passed additional hosts",
 			inCfg: config.Aerospike{
-				Hosts: []string{"foo.com", "bat.com"},
-				Port:  8888,
+				Hosts:      []string{"foo.com", "bat.com"},
+				Port:       8888,
+				DefaultSet: "uuid",
 			},
 			expectPanic: true,
 			expectedLogEntries: []logEntry{
@@ -123,9 +124,10 @@ func TestNewAerospikeBackend(t *testing.T) {
 		{
 			desc: "Unable to connect host and hosts panic and log fatal error when passed additional hosts",
 			inCfg: config.Aerospike{
-				Host:  "fakeTestUrl.foo",
-				Hosts: []string{"foo.com", "bat.com"},
-				Port:  8888,
+				Host:       "fakeTestUrl.foo",
+				Hosts:      []string{"foo.com", "bat.com"},
+				Port:       8888,
+				DefaultSet: "uuid",
 			},
 			expectPanic: true,
 			expectedLogEntries: []logEntry{
@@ -140,10 +142,11 @@ func TestNewAerospikeBackend(t *testing.T) {
 			},
 		},
 		{
-			desc: "Unable to connect hoost panic and log fatal error",
+			desc: "Unable to connect host panic and log fatal error",
 			inCfg: config.Aerospike{
-				Host: "fakeTestUrl.foo",
-				Port: 8888,
+				Host:       "fakeTestUrl.foo",
+				Port:       8888,
+				DefaultSet: "uuid",
 			},
 			expectPanic: true,
 			expectedLogEntries: []logEntry{
@@ -153,6 +156,25 @@ func TestNewAerospikeBackend(t *testing.T) {
 				},
 				{
 					msg: "Failed to connect to host(s): [fakeTestUrl.foo:8888]; error: Connecting to the cluster timed out.",
+					lvl: logrus.FatalLevel,
+				},
+			},
+		},
+		{
+			desc: "No DefaultSet is configured and log fatal error ",
+			inCfg: config.Aerospike{
+				Host:  "fakeTestUrl.foo",
+				Hosts: []string{"foo.com", "bat.com"},
+				Port:  8888,
+			},
+			expectPanic: true,
+			expectedLogEntries: []logEntry{
+				{
+					msg: "config.backend.aerospike.host is being deprecated in favor of config.backend.aerospike.hosts",
+					lvl: logrus.InfoLevel,
+				},
+				{
+					msg: "config.backend.aerospike.default_set is not configured",
 					lvl: logrus.FatalLevel,
 				},
 			},
@@ -180,6 +202,42 @@ func TestNewAerospikeBackend(t *testing.T) {
 		hook.Reset()
 		assert.Nil(t, hook.LastEntry())
 	}
+}
+
+func TestFetchSourceSet(t *testing.T) {
+	testCases := []struct {
+		desc            string
+		customSets      map[string]string
+		expectedSetName string
+	}{
+		{
+			desc:            "No Custom sets Defined",
+			customSets:      nil,
+			expectedSetName: "uuid",
+		},
+		{
+			desc:            "Custom sets defined but source doesnt match",
+			customSets:      map[string]string{"no_match_source": "foo"},
+			expectedSetName: "uuid",
+		},
+		{
+			desc:            "Custom sets defined and source matches",
+			customSets:      map[string]string{"match_source": "bar"},
+			expectedSetName: "bar",
+		},
+	}
+
+	for _, test := range testCases {
+		aerospikeBackend := &AerospikeBackend{
+			metrics:    metricstest.CreateMockMetrics(),
+			defaultSet: "uuid",
+			customSets: test.customSets,
+		}
+		setName := aerospikeBackend.FetchSourceSet("match_source")
+		assert.Equal(t, test.expectedSetName, setName, test.desc)
+
+	}
+
 }
 
 func TestFormatAerospikeError(t *testing.T) {
@@ -283,7 +341,7 @@ func TestClientGet(t *testing.T) {
 		aerospikeBackend.client = tt.inAerospikeClient
 
 		// Run test
-		actualValue, actualErr := aerospikeBackend.Get(context.TODO(), "defaultKey")
+		actualValue, actualErr := aerospikeBackend.Get(context.TODO(), "defaultKey", "defaultSet")
 
 		// Assertions
 		assert.Equal(t, tt.expectedValue, actualValue, tt.desc)
@@ -340,7 +398,7 @@ func TestClientPut(t *testing.T) {
 		aerospikeBackend.client = tt.inAerospikeClient
 
 		// Run test
-		actualErr := aerospikeBackend.Put(context.TODO(), tt.inKey, tt.inValueToStore, 0)
+		actualErr := aerospikeBackend.Put(context.TODO(), tt.inKey, tt.inValueToStore, 0, "defaultSet")
 
 		// Assert Put error
 		if tt.expectedErrorMsg != "" {
@@ -349,7 +407,7 @@ func TestClientPut(t *testing.T) {
 			assert.Nil(t, actualErr, tt.desc)
 
 			// Assert Put() sucessfully logged "not default value" under "testKey":
-			storedValue, getErr := aerospikeBackend.Get(context.TODO(), tt.inKey)
+			storedValue, getErr := aerospikeBackend.Get(context.TODO(), tt.inKey, "defaultSet")
 
 			assert.Nil(t, getErr, tt.desc)
 			assert.Equal(t, tt.inValueToStore, storedValue, tt.desc)

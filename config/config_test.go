@@ -1059,7 +1059,8 @@ func getExpectedDefaultConfig() Configuration {
 				Hosts: []string{},
 			},
 			Aerospike: Aerospike{
-				Hosts: []string{},
+				Hosts:      []string{},
+				DefaultSet: "uuid",
 			},
 		},
 		Compression: Compression{
@@ -1109,6 +1110,11 @@ func getExpectedFullConfigForTestFile() Configuration {
 				Namespace:  "whatever",
 				User:       "foo",
 				Password:   "bar",
+				DefaultSet: "genericset",
+				CustomSets: map[string]string{
+					"ixl":  "uuid_replicated",
+					"pbjs": "uuid_not_replicated",
+				},
 			},
 			Cassandra: Cassandra{
 				Hosts:    "127.0.0.1",

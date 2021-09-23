@@ -11,7 +11,7 @@ type MemoryBackend struct {
 	mu sync.Mutex
 }
 
-func (b *MemoryBackend) Get(ctx context.Context, key string) (string, error) {
+func (b *MemoryBackend) Get(ctx context.Context, key string, source string) (string, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
@@ -23,7 +23,7 @@ func (b *MemoryBackend) Get(ctx context.Context, key string) (string, error) {
 	return v, nil
 }
 
-func (b *MemoryBackend) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+func (b *MemoryBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

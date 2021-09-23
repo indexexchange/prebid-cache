@@ -22,10 +22,12 @@ func NewGetHandler(backend backends.Backend, allowKeys bool) func(http.ResponseW
 			return
 		}
 
+		source := r.URL.Query().Get("source")
+
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
 
-		value, err := backend.Get(ctx, id)
+		value, err := backend.Get(ctx, id, source)
 		if err != nil {
 			handleException(w, err, http.StatusNotFound, id)
 			return

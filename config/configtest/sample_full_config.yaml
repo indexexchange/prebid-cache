@@ -19,6 +19,10 @@ backend:
     hosts: ["aerospike2.prebid.com", "aerospike3.prebid.com"]
     port: 3000
     namespace: "whatever"
+    default_set:  "genericset" # defaults to uuid if not specified"
+    custom_sets:
+      - ixl: uuid_replicated
+      - pbjs: uuid_not_replicated
     user: "foo"
     password: "bar"
   cassandra:

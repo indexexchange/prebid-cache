@@ -48,6 +48,7 @@ func setConfigDefaults(v *viper.Viper) {
 	v.SetDefault("backend.aerospike.hosts", []string{})
 	v.SetDefault("backend.aerospike.port", 0)
 	v.SetDefault("backend.aerospike.namespace", "")
+	v.SetDefault("backend.aerospike.default_set", "uuid")
 	v.SetDefault("backend.aerospike.user", "")
 	v.SetDefault("backend.aerospike.password", "")
 	v.SetDefault("backend.aerospike.default_ttl_seconds", 0)

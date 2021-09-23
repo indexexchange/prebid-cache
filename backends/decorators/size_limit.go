@@ -21,11 +21,11 @@ type sizeCappedBackend struct {
 	limit    int
 }
 
-func (b *sizeCappedBackend) Get(ctx context.Context, key string) (string, error) {
-	return b.delegate.Get(ctx, key)
+func (b *sizeCappedBackend) Get(ctx context.Context, key string, source string) (string, error) {
+	return b.delegate.Get(ctx, key, source)
 }
 
-func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 	valueLen := len(value)
 	if valueLen == 0 || valueLen > b.limit {
 		return &BadPayloadSize{
@@ -34,7 +34,7 @@ func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, t
 		}
 	}
 
-	return b.delegate.Put(ctx, key, value, ttlSeconds)
+	return b.delegate.Put(ctx, key, value, ttlSeconds, source)
 }
 
 type BadPayloadSize struct {
