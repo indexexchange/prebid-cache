@@ -15,11 +15,11 @@ type backendWithMetrics struct {
 	metrics  *metrics.Metrics
 }
 
-func (b *backendWithMetrics) Get(ctx context.Context, key string) (string, error) {
+func (b *backendWithMetrics) Get(ctx context.Context, key string, source string) (string, error) {
 
 	b.metrics.RecordGetBackendTotal()
 	start := time.Now()
-	val, err := b.delegate.Get(ctx, key)
+	val, err := b.delegate.Get(ctx, key, source)
 	if err == nil {
 		b.metrics.RecordGetBackendDuration(time.Since(start))
 	} else {
@@ -33,7 +33,7 @@ func (b *backendWithMetrics) Get(ctx context.Context, key string) (string, error
 	return val, err
 }
 
-func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 
 	if strings.HasPrefix(value, backends.XML_PREFIX) {
 		b.metrics.RecordPutBackendXml()
@@ -45,7 +45,7 @@ func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, 
 	b.metrics.RecordPutBackendTTLSeconds(time.Duration(ttlSeconds) * time.Second)
 
 	start := time.Now()
-	err := b.delegate.Put(ctx, key, value, ttlSeconds)
+	err := b.delegate.Put(ctx, key, value, ttlSeconds, source)
 	if err == nil {
 		b.metrics.RecordPutBackendDuration(time.Since(start))
 	} else {

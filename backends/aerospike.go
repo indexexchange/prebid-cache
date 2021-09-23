@@ -12,12 +12,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const setName = "uuid"
 const binValue = "value"
 
 // Wrapper for the Aerospike client
 type AerospikeDB interface {
-	NewUuidKey(namespace string, key string) (*as.Key, error)
+	NewUuidKey(namespace string, set string, key string) (*as.Key, error)
 	Get(key *as.Key) (*as.Record, error)
 	Put(policy *as.WritePolicy, key *as.Key, binMap as.BinMap) error
 }
@@ -34,15 +33,17 @@ func (db AerospikeDBClient) Put(policy *as.WritePolicy, key *as.Key, binMap as.B
 	return db.client.Put(policy, key, binMap)
 }
 
-func (db *AerospikeDBClient) NewUuidKey(namespace string, key string) (*as.Key, error) {
+func (db *AerospikeDBClient) NewUuidKey(namespace string, setName string, key string) (*as.Key, error) {
 	return as.NewKey(namespace, setName, key)
 }
 
 // Instantiates, and configures the Aerospike client, it also performs Get and Put operations and monitors results
 type AerospikeBackend struct {
-	namespace string
-	client    AerospikeDB
-	metrics   *metrics.Metrics
+	namespace  string
+	client     AerospikeDB
+	metrics    *metrics.Metrics
+	defaultSet string
+	customSets map[string]string
 }
 
 func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *AerospikeBackend {
@@ -63,6 +64,11 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 		hosts = append(hosts, as.NewHost(host, cfg.Port))
 	}
 
+	if len(cfg.DefaultSet) == 0 {
+		log.Fatalf("config.backend.aerospike.default_set is not configured")
+		panic("Aerospike backend failure no DefaultSet configured")
+	}
+
 	client, err := as.NewClientWithPolicyAndHost(clientPolicy, hosts...)
 	if err != nil {
 		log.Fatalf("%v", formatAerospikeError(err).Error())
@@ -71,14 +77,30 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 	log.Infof("Connected to Aerospike host(s) %v on port %d", append(cfg.Hosts, cfg.Host), cfg.Port)
 
 	return &AerospikeBackend{
-		namespace: cfg.Namespace,
-		client:    &AerospikeDBClient{client},
-		metrics:   metrics,
+		namespace:  cfg.Namespace,
+		client:     &AerospikeDBClient{client},
+		metrics:    metrics,
+		defaultSet: cfg.DefaultSet,
+		customSets: cfg.CustomSets,
 	}
+
 }
 
-func (a *AerospikeBackend) Get(ctx context.Context, key string) (string, error) {
-	asKey, err := a.client.NewUuidKey(a.namespace, key)
+func (a *AerospikeBackend) FetchSourceSet(source string) string {
+	setName := a.customSets[source]
+
+	if setName == "" {
+		setName = a.defaultSet
+	}
+
+	return setName
+}
+
+func (a *AerospikeBackend) Get(ctx context.Context, key string, source string) (string, error) {
+
+	setName := a.FetchSourceSet(source)
+
+	asKey, err := a.client.NewUuidKey(a.namespace, setName, key)
 	if err != nil {
 		return "", formatAerospikeError(err)
 	}
@@ -103,8 +125,11 @@ func (a *AerospikeBackend) Get(ctx context.Context, key string) (string, error) 
 	return str, nil
 }
 
-func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
-	asKey, err := a.client.NewUuidKey(a.namespace, key)
+func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+
+	setName := a.FetchSourceSet(source)
+
+	asKey, err := a.client.NewUuidKey(a.namespace, setName, key)
 	if err != nil {
 		return formatAerospikeError(err)
 	}

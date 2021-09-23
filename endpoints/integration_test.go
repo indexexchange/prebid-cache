@@ -554,7 +554,7 @@ type mockBackend struct {
 	data map[string]string
 }
 
-func (b *mockBackend) Get(ctx context.Context, key string) (string, error) {
+func (b *mockBackend) Get(ctx context.Context, key string, source string) (string, error) {
 	v, ok := b.data[key]
 	if !ok {
 		return "", utils.KeyNotFoundError{}
@@ -562,7 +562,7 @@ func (b *mockBackend) Get(ctx context.Context, key string) (string, error) {
 	return v, nil
 }
 
-func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 	b.data[key] = value
 	return nil
 }

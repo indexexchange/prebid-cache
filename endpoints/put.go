@@ -95,7 +95,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 			defer cancel()
 			// Only allow setting a provided key if configured (and ensure a key is provided).
 			if allowKeys && len(p.Key) > 0 {
-				s, err := backend.Get(ctx, p.Key)
+				s, err := backend.Get(ctx, p.Key, p.Source)
 				if err != nil || len(s) == 0 {
 					resps.Responses[i].UUID = p.Key
 				} else {
@@ -106,7 +106,8 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 			// Eventually we may want to provide error details, but as of today this is the only non-fatal error
 			// Future error details could go into a second property of the Responses object, such as "errors"
 			if len(resps.Responses[i].UUID) > 0 {
-				err = backend.Put(ctx, resps.Responses[i].UUID, toCache, p.TTLSeconds)
+
+				err = backend.Put(ctx, resps.Responses[i].UUID, toCache, p.TTLSeconds, p.Source)
 				if err != nil {
 					if _, ok := err.(*backendDecorators.BadPayloadSize); ok {
 						http.Error(w, fmt.Sprintf("POST /cache element %d exceeded max size: %v", i, err), http.StatusBadRequest)
@@ -150,6 +151,7 @@ type PutObject struct {
 	TTLSeconds int             `json:"ttlseconds"`
 	Value      json.RawMessage `json:"value"`
 	Key        string          `json:"key"`
+	Source     string          `json:"source",omitempty`
 }
 
 type PutResponseObject struct {

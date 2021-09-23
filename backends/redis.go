@@ -50,7 +50,7 @@ func NewRedisBackend(cfg config.Redis) *Redis {
 	}
 }
 
-func (redis *Redis) Get(ctx context.Context, key string) (string, error) {
+func (redis *Redis) Get(ctx context.Context, key string, source string) (string, error) {
 	res, err := redis.client.Get(key).Result()
 
 	if err != nil {
@@ -60,7 +60,7 @@ func (redis *Redis) Get(ctx context.Context, key string) (string, error) {
 	return string(res), nil
 }
 
-func (redis *Redis) Put(ctx context.Context, key string, value string, ttlSeconds int) error {
+func (redis *Redis) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 	err := redis.client.Set(key, value, time.Duration(ttlSeconds)*time.Second).Err()
 
 	if err != nil {
