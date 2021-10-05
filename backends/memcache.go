@@ -60,3 +60,5 @@ func (mc *Memcache) Put(ctx context.Context, key string, value string, ttlSecond
 
 	return nil
 }
+
+func (c *Memcache) FetchSourceSet(source string) string { return "" }

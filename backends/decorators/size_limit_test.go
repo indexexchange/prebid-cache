@@ -45,3 +45,5 @@ func (b *successfulBackend) Get(ctx context.Context, key string, source string) 
 func (b *successfulBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
 	return nil
 }
+
+func (s *successfulBackend) FetchSourceSet(source string) string { return "" }

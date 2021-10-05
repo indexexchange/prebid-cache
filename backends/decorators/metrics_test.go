@@ -23,6 +23,8 @@ func (b *failedBackend) Put(ctx context.Context, key string, value string, ttlSe
 	return b.returnError
 }
 
+func (s *failedBackend) FetchSourceSet(source string) string { return "" }
+
 func TestGetSuccessMetrics(t *testing.T) {
 
 	m := metricstest.CreateMockMetrics()

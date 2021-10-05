@@ -14,6 +14,7 @@ const (
 	FormatKey    string = "format"
 	ConnErrorKey string = "connection_error"
 	TypeKey      string = "type"
+	SetKey       string = "set"
 
 	// Label values
 	TotalsVal      string = "total"
@@ -26,6 +27,7 @@ const (
 	InvFormatVal   string = "invalid_format"
 	CloseVal       string = "close"
 	AcceptVal      string = "accept"
+	EmptyVal       string = ""
 
 	// Metric names
 	PutRequestMet  string = "puts_request"
@@ -115,7 +117,7 @@ func CreatePrometheusMetrics(cfg config.PrometheusMetrics) *PrometheusMetrics {
 			PutBackendRequests: newCounterVecWithLabels(cfg, registry,
 				PutBackendMet,
 				"Count of total requests to Prebid Cache labeled by format, status and whether or not it comes with TTL",
-				[]string{FormatKey},
+				[]string{FormatKey, SetKey},
 			),
 			RequestLength: newHistogram(cfg, registry,
 				PutBackSizeMet,
@@ -137,12 +139,12 @@ func CreatePrometheusMetrics(cfg config.PrometheusMetrics) *PrometheusMetrics {
 			RequestStatus: newCounterVecWithLabels(cfg, registry,
 				GetBackendMet,
 				"Count of total backend get requests to Prebid Server labeled by status.",
-				[]string{StatusKey},
+				[]string{StatusKey, SetKey},
 			),
 			ErrorsByType: newCounterVecWithLabels(cfg, registry,
 				GetBackendErr,
 				"Account for the most frequent type of get errors in the backend",
-				[]string{TypeKey},
+				[]string{TypeKey, SetKey},
 			),
 		},
 		Connections: &PrometheusConnectionMetrics{
@@ -249,16 +251,16 @@ func (m *PrometheusMetrics) RecordGetDuration(duration time.Duration) {
 	m.Gets.Duration.Observe(duration.Seconds())
 }
 
-func (m *PrometheusMetrics) RecordPutBackendXml() {
-	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: XmlVal}).Inc()
+func (m *PrometheusMetrics) RecordPutBackendXml(source string) {
+	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: XmlVal, SetKey: source}).Inc()
 }
 
-func (m *PrometheusMetrics) RecordPutBackendJson() {
-	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: JsonVal}).Inc()
+func (m *PrometheusMetrics) RecordPutBackendJson(source string) {
+	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: JsonVal, SetKey: source}).Inc()
 }
 
-func (m *PrometheusMetrics) RecordPutBackendInvalid() {
-	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: InvFormatVal}).Inc()
+func (m *PrometheusMetrics) RecordPutBackendInvalid(source string) {
+	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: InvFormatVal, SetKey: source}).Inc()
 }
 
 func (m *PrometheusMetrics) RecordPutBackendDuration(duration time.Duration) {
@@ -269,36 +271,36 @@ func (m *PrometheusMetrics) RecordPutBackendTTLSeconds(duration time.Duration) {
 	m.PutsBackend.RequestTTLDuration.Observe(duration.Seconds())
 }
 
-func (m *PrometheusMetrics) RecordPutBackendError() {
-	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: ErrorVal}).Inc()
+func (m *PrometheusMetrics) RecordPutBackendError(source string) {
+	m.PutsBackend.PutBackendRequests.With(prometheus.Labels{FormatKey: ErrorVal, SetKey: source}).Inc()
 }
 
 func (m *PrometheusMetrics) RecordPutBackendSize(sizeInBytes float64) {
 	m.PutsBackend.RequestLength.Observe(sizeInBytes)
 }
 
-func (m *PrometheusMetrics) RecordGetBackendTotal() {
-	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: TotalsVal}).Inc()
+func (m *PrometheusMetrics) RecordGetBackendTotal(source string) {
+	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: TotalsVal, SetKey: source}).Inc()
 }
 
 func (m *PrometheusMetrics) RecordGetBackendDuration(duration time.Duration) {
 	m.GetsBackend.Duration.Observe(duration.Seconds())
 }
 
-func (m *PrometheusMetrics) RecordGetBackendError() {
-	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: ErrorVal}).Inc()
+func (m *PrometheusMetrics) RecordGetBackendError(source string) {
+	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: ErrorVal, SetKey: source}).Inc()
 }
 
-func (m *PrometheusMetrics) RecordGetBackendBadRequest() {
-	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: BadRequestVal}).Inc()
+func (m *PrometheusMetrics) RecordGetBackendBadRequest(source string) {
+	m.GetsBackend.RequestStatus.With(prometheus.Labels{StatusKey: BadRequestVal, SetKey: source}).Inc()
 }
 
-func (m *PrometheusMetrics) RecordKeyNotFoundError() {
-	m.GetsBackend.ErrorsByType.With(prometheus.Labels{TypeKey: KeyNotFoundVal}).Inc()
+func (m *PrometheusMetrics) RecordKeyNotFoundError(source string) {
+	m.GetsBackend.ErrorsByType.With(prometheus.Labels{TypeKey: KeyNotFoundVal, SetKey: source}).Inc()
 }
 
-func (m *PrometheusMetrics) RecordMissingKeyError() {
-	m.GetsBackend.ErrorsByType.With(prometheus.Labels{TypeKey: MissingKeyVal}).Inc()
+func (m *PrometheusMetrics) RecordMissingKeyError(source string) {
+	m.GetsBackend.ErrorsByType.With(prometheus.Labels{TypeKey: MissingKeyVal, SetKey: source}).Inc()
 }
 
 func (m *PrometheusMetrics) RecordConnectionOpen() {

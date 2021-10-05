@@ -69,3 +69,5 @@ func (redis *Redis) Put(ctx context.Context, key string, value string, ttlSecond
 
 	return nil
 }
+
+func (c *Redis) FetchSourceSet(source string) string { return "" }
