@@ -144,22 +144,22 @@ func TestDurationRecorders(t *testing.T) {
 				},
 				{
 					description:    "record a generic put error with RecordPutBackendError",
-					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendError() },
+					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendError("") },
 					metricToAssert: m.PutsBackend.Errors,
 				},
 				{
 					description:    "record a valid XML put request with RecordPutBackendXml",
-					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendXml() },
+					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendXml("") },
 					metricToAssert: m.PutsBackend.XmlRequest,
 				},
 				{
 					description:    "record a valid JSON put request with RecordPutBackendJson",
-					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendJson() },
+					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendJson("") },
 					metricToAssert: m.PutsBackend.JsonRequest,
 				},
 				{
 					description:    "record an invalid put request with RecordPutBackendInvalid",
-					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendInvalid() },
+					runTest:        func(im *InfluxMetrics) { im.RecordPutBackendInvalid("") },
 					metricToAssert: m.PutsBackend.InvalidRequest,
 				},
 				{
@@ -184,12 +184,12 @@ func TestDurationRecorders(t *testing.T) {
 				},
 				{
 					description:    "record a generic get error with RecordGetBackendError",
-					runTest:        func(im *InfluxMetrics) { im.RecordGetBackendError() },
+					runTest:        func(im *InfluxMetrics) { im.RecordGetBackendError("") },
 					metricToAssert: m.GetsBackend.Errors,
 				},
 				{
 					description:    "record an incoming, valid get request with RecordGetBackendTotal",
-					runTest:        func(im *InfluxMetrics) { im.RecordGetBackendTotal() },
+					runTest:        func(im *InfluxMetrics) { im.RecordGetBackendTotal("") },
 					metricToAssert: m.GetsBackend.Request,
 				},
 			},
@@ -199,12 +199,12 @@ func TestDurationRecorders(t *testing.T) {
 			[]testCase{
 				{
 					description:    "record a key not found get request error with RecordKeyNotFoundError",
-					runTest:        func(im *InfluxMetrics) { im.RecordKeyNotFoundError() },
+					runTest:        func(im *InfluxMetrics) { im.RecordKeyNotFoundError("") },
 					metricToAssert: m.GetsErr.KeyNotFoundErrors,
 				},
 				{
 					description:    "record a missing key, get request error with RecordMissingKeyError",
-					runTest:        func(im *InfluxMetrics) { im.RecordMissingKeyError() },
+					runTest:        func(im *InfluxMetrics) { im.RecordMissingKeyError("") },
 					metricToAssert: m.GetsErr.MissingKeyErrors,
 				},
 			},

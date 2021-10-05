@@ -567,6 +567,8 @@ func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeco
 	return nil
 }
 
+func (c *mockBackend) FetchSourceSet(source string) string { return "" }
+
 func newMockBackend() *mockBackend {
 	return &mockBackend{
 		data: map[string]string{

@@ -71,12 +71,16 @@ func TestPrometheusRequestStatusMetric(t *testing.T) {
 	m := createPrometheusMetricsForTesting()
 
 	type testCaseObject struct {
-		description      string
-		expDuration      float64
-		expRequestTotals float64
-		expRequestErrors float64
-		expBadRequests   float64
-		testCase         func(pm *PrometheusMetrics)
+		description           string
+		expDuration           float64
+		expRequestTotals      float64
+		expRequestErrors      float64
+		expBadRequests        float64
+		testCase              func(pm *PrometheusMetrics)
+		expLabels             map[string]string
+		expRequestTotalLabels prometheus.Labels
+		expRequestErrorLabels prometheus.Labels
+		expBadRequestLabels   prometheus.Labels
 	}
 
 	testGroups := map[*PrometheusRequestStatusMetric][]testCaseObject{
@@ -88,24 +92,36 @@ func TestPrometheusRequestStatusMetric(t *testing.T) {
 				},
 				expDuration:      10,
 				expRequestTotals: 0, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count put request total",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordPutTotal() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count put request error",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordPutError() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count put request bad request",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordPutBadRequest() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 1,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 		},
 		m.Gets: {
@@ -116,24 +132,36 @@ func TestPrometheusRequestStatusMetric(t *testing.T) {
 				},
 				expDuration:      10,
 				expRequestTotals: 0, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count get request total",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetTotal() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count get request error",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetError() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 			{
 				description:      "Count get request bad request",
 				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBadRequest() },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 1,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal},
 			},
 		},
 		m.GetsBackend: {
@@ -144,24 +172,36 @@ func TestPrometheusRequestStatusMetric(t *testing.T) {
 				},
 				expDuration:      10,
 				expRequestTotals: 0, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal, SetKey: EmptyVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal, SetKey: EmptyVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal, SetKey: EmptyVal},
 			},
 			{
 				description:      "Count get backend request total",
-				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendTotal() },
+				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendTotal("") },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 0, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal, SetKey: EmptyVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal, SetKey: EmptyVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal, SetKey: EmptyVal},
 			},
 			{
 				description:      "Count get backend request error",
-				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendError() },
+				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendError("") },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 0,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal, SetKey: EmptyVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal, SetKey: EmptyVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal, SetKey: EmptyVal},
 			},
 			{
 				description:      "Count get backend request bad request",
-				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendBadRequest() },
+				testCase:         func(pm *PrometheusMetrics) { pm.RecordGetBackendBadRequest("") },
 				expDuration:      10,
 				expRequestTotals: 1, expRequestErrors: 1, expBadRequests: 1,
+				expRequestTotalLabels: prometheus.Labels{StatusKey: TotalsVal, SetKey: EmptyVal},
+				expRequestErrorLabels: prometheus.Labels{StatusKey: ErrorVal, SetKey: EmptyVal},
+				expBadRequestLabels:   prometheus.Labels{StatusKey: BadRequestVal, SetKey: EmptyVal},
 			},
 		},
 	}
@@ -171,9 +211,9 @@ func TestPrometheusRequestStatusMetric(t *testing.T) {
 			test.testCase(m)
 
 			assertHistogram(t, test.description, prometheusMetric.Duration, 1, test.expDuration)
-			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expRequestTotals, prometheus.Labels{StatusKey: TotalsVal})
-			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expRequestErrors, prometheus.Labels{StatusKey: ErrorVal})
-			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expBadRequests, prometheus.Labels{StatusKey: BadRequestVal})
+			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expRequestTotals, test.expRequestTotalLabels)
+			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expRequestErrors, test.expRequestErrorLabels)
+			assertCounterVecValue(t, test.description, prometheusMetric.RequestStatus, test.expBadRequests, test.expBadRequestLabels)
 		}
 	}
 }
@@ -187,26 +227,37 @@ func TestGetsBackendErrorsByType(t *testing.T) {
 		expKeyNotFoundErrors float64
 		expMissingKeyErrors  float64
 		recordMetric         func(pm *PrometheusMetrics)
+		expectedSetKey       string
 	}{
 		{
 			description:          "Add to the get backend key not found error counter",
 			expKeyNotFoundErrors: 1,
 			expMissingKeyErrors:  0,
-			recordMetric:         func(pm *PrometheusMetrics) { pm.RecordKeyNotFoundError() },
+			recordMetric:         func(pm *PrometheusMetrics) { pm.RecordKeyNotFoundError("") },
+			expectedSetKey:       "",
 		},
 		{
 			description:          "Add to the get backend missing key error",
 			expKeyNotFoundErrors: 1,
 			expMissingKeyErrors:  1,
-			recordMetric:         func(pm *PrometheusMetrics) { pm.RecordMissingKeyError() },
+			recordMetric:         func(pm *PrometheusMetrics) { pm.RecordMissingKeyError("") },
+			expectedSetKey:       "",
+		},
+		{
+			description:          "Add to the get backend missing key error with set",
+			expKeyNotFoundErrors: 0,
+			expMissingKeyErrors:  1,
+			recordMetric:         func(pm *PrometheusMetrics) { pm.RecordMissingKeyError("ixl") },
+			expectedSetKey:       "ixl",
 		},
 	}
 
 	for _, test := range testCaseArray {
+
 		test.recordMetric(m)
 
-		assertCounterVecValue(t, test.description, m.GetsBackend.ErrorsByType, test.expKeyNotFoundErrors, prometheus.Labels{TypeKey: KeyNotFoundVal})
-		assertCounterVecValue(t, test.description, m.GetsBackend.ErrorsByType, test.expMissingKeyErrors, prometheus.Labels{TypeKey: MissingKeyVal})
+		assertCounterVecValue(t, test.description, m.GetsBackend.ErrorsByType, test.expKeyNotFoundErrors, prometheus.Labels{TypeKey: KeyNotFoundVal, SetKey: test.expectedSetKey})
+		assertCounterVecValue(t, test.description, m.GetsBackend.ErrorsByType, test.expMissingKeyErrors, prometheus.Labels{TypeKey: MissingKeyVal, SetKey: test.expectedSetKey})
 	}
 }
 
@@ -229,6 +280,10 @@ func TestPutBackendMetrics(t *testing.T) {
 		expDefTTLSeconds float64
 		expSizeHistSum   float64
 		expSizeHistCount uint64
+		expXmlLabels     prometheus.Labels
+		expJsonLabels    prometheus.Labels
+		expInvalidLabels prometheus.Labels
+		expErrorLabels   prometheus.Labels
 	}
 
 	testCases := []testCaseObject{
@@ -237,38 +292,58 @@ func TestPutBackendMetrics(t *testing.T) {
 			testCase: func(pm *PrometheusMetrics) {
 				pm.RecordPutBackendDuration(TenSeconds)
 			},
-			expDuration: 10,
+			expDuration:      10,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
-			description: "Count put backend xml request",
-			testCase:    func(pm *PrometheusMetrics) { pm.RecordPutBackendXml() },
-			expDuration: 10,
-			expXmlCount: 1,
+			description:      "Count put backend xml request",
+			testCase:         func(pm *PrometheusMetrics) { pm.RecordPutBackendXml("") },
+			expDuration:      10,
+			expXmlCount:      1,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
-			description:  "Count put backend json request",
-			testCase:     func(pm *PrometheusMetrics) { pm.RecordPutBackendJson() },
-			expDuration:  10,
-			expXmlCount:  1,
-			expJsonCount: 1,
+			description:      "Count put backend json request",
+			testCase:         func(pm *PrometheusMetrics) { pm.RecordPutBackendJson("") },
+			expDuration:      10,
+			expXmlCount:      1,
+			expJsonCount:     1,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
-			description:     "Count put backend invalid request",
-			testCase:        func(pm *PrometheusMetrics) { pm.RecordPutBackendInvalid() },
-			expDuration:     10,
-			expXmlCount:     1,
-			expJsonCount:    1,
-			expInvalidCount: 1,
+			description:      "Count put backend invalid request",
+			testCase:         func(pm *PrometheusMetrics) { pm.RecordPutBackendInvalid("") },
+			expDuration:      10,
+			expXmlCount:      1,
+			expJsonCount:     1,
+			expInvalidCount:  1,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
-			description:     "Count put backend request errors",
-			testCase:        func(pm *PrometheusMetrics) { pm.RecordPutBackendError() },
-			expDuration:     10,
-			expXmlCount:     1,
-			expJsonCount:    1,
-			expInvalidCount: 1,
-			expDefTTLCount:  1,
-			expErrorCount:   1,
+			description:      "Count put backend request errors",
+			testCase:         func(pm *PrometheusMetrics) { pm.RecordPutBackendError("") },
+			expDuration:      10,
+			expXmlCount:      1,
+			expJsonCount:     1,
+			expInvalidCount:  1,
+			expDefTTLCount:   1,
+			expErrorCount:    1,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
 			description: "Log put backend request duration",
@@ -283,6 +358,10 @@ func TestPutBackendMetrics(t *testing.T) {
 			expErrorCount:    1,
 			expSizeHistSum:   16,
 			expSizeHistCount: 1,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 		{
 			description: "Out of those requests that define a TTL, log the number of TTL seconds",
@@ -298,6 +377,10 @@ func TestPutBackendMetrics(t *testing.T) {
 			expSizeHistSum:   16,
 			expSizeHistCount: 1,
 			expDefTTLSeconds: 10,
+			expXmlLabels:     prometheus.Labels{FormatKey: XmlVal, SetKey: EmptyVal},
+			expJsonLabels:    prometheus.Labels{FormatKey: JsonVal, SetKey: EmptyVal},
+			expInvalidLabels: prometheus.Labels{FormatKey: InvFormatVal, SetKey: EmptyVal},
+			expErrorLabels:   prometheus.Labels{FormatKey: ErrorVal, SetKey: EmptyVal},
 		},
 	}
 
@@ -305,10 +388,10 @@ func TestPutBackendMetrics(t *testing.T) {
 		test.testCase(m)
 
 		assertHistogram(t, test.description, m.PutsBackend.Duration, 1, test.expDuration)
-		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expXmlCount, prometheus.Labels{FormatKey: XmlVal})
-		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expJsonCount, prometheus.Labels{FormatKey: JsonVal})
-		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expInvalidCount, prometheus.Labels{FormatKey: InvFormatVal})
-		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expErrorCount, prometheus.Labels{FormatKey: ErrorVal})
+		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expXmlCount, test.expXmlLabels)
+		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expJsonCount, test.expJsonLabels)
+		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expInvalidCount, test.expInvalidLabels)
+		assertCounterVecValue(t, test.description, m.PutsBackend.PutBackendRequests, test.expErrorCount, test.expErrorLabels)
 		assertHistogram(t, test.description, m.PutsBackend.RequestLength, test.expSizeHistCount, test.expSizeHistSum)
 	}
 }

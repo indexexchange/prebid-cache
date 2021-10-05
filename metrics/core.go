@@ -62,21 +62,21 @@ func (m Metrics) RecordGetDuration(duration time.Duration) {
 	}
 }
 
-func (m Metrics) RecordPutBackendXml() {
+func (m Metrics) RecordPutBackendXml(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordPutBackendXml()
+		me.RecordPutBackendXml(source)
 	}
 }
 
-func (m Metrics) RecordPutBackendJson() {
+func (m Metrics) RecordPutBackendJson(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordPutBackendJson()
+		me.RecordPutBackendJson(source)
 	}
 }
 
-func (m Metrics) RecordPutBackendInvalid() {
+func (m Metrics) RecordPutBackendInvalid(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordPutBackendInvalid()
+		me.RecordPutBackendInvalid(source)
 	}
 }
 
@@ -92,9 +92,9 @@ func (m Metrics) RecordPutBackendTTLSeconds(duration time.Duration) {
 	}
 }
 
-func (m Metrics) RecordPutBackendError() {
+func (m Metrics) RecordPutBackendError(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordPutBackendError()
+		me.RecordPutBackendError(source)
 	}
 }
 
@@ -110,27 +110,27 @@ func (m Metrics) RecordGetBackendDuration(duration time.Duration) {
 	}
 }
 
-func (m Metrics) RecordGetBackendTotal() {
+func (m Metrics) RecordGetBackendTotal(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordGetBackendTotal()
+		me.RecordGetBackendTotal(source)
 	}
 }
 
-func (m Metrics) RecordGetBackendError() {
+func (m Metrics) RecordGetBackendError(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordGetBackendError()
+		me.RecordGetBackendError(source)
 	}
 }
 
-func (m Metrics) RecordKeyNotFoundError() {
+func (m Metrics) RecordKeyNotFoundError(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordKeyNotFoundError()
+		me.RecordKeyNotFoundError(source)
 	}
 }
 
-func (m Metrics) RecordMissingKeyError() {
+func (m Metrics) RecordMissingKeyError(source string) {
 	for _, me := range m.MetricEngines {
-		me.RecordMissingKeyError()
+		me.RecordMissingKeyError(source)
 	}
 }
 
@@ -188,18 +188,18 @@ type CacheMetrics interface {
 	RecordGetBadRequest()
 	RecordGetTotal()
 	RecordGetDuration(duration time.Duration)
-	RecordPutBackendXml()
-	RecordPutBackendJson()
-	RecordPutBackendInvalid()
+	RecordPutBackendXml(source string)
+	RecordPutBackendJson(source string)
+	RecordPutBackendInvalid(source string)
 	RecordPutBackendDuration(duration time.Duration)
 	RecordPutBackendTTLSeconds(duration time.Duration)
-	RecordPutBackendError()
+	RecordPutBackendError(source string)
 	RecordPutBackendSize(sizeInBytes float64)
-	RecordGetBackendTotal()
+	RecordGetBackendTotal(source string)
 	RecordGetBackendDuration(duration time.Duration)
-	RecordGetBackendError()
-	RecordKeyNotFoundError()
-	RecordMissingKeyError()
+	RecordGetBackendError(source string)
+	RecordKeyNotFoundError(source string)
+	RecordMissingKeyError(source string)
 	RecordConnectionOpen()
 	RecordConnectionClosed()
 	RecordCloseConnectionErrors()

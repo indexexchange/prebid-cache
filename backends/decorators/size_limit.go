@@ -37,6 +37,10 @@ func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, t
 	return b.delegate.Put(ctx, key, value, ttlSeconds, source)
 }
 
+func (s *sizeCappedBackend) FetchSourceSet(source string) string {
+	return s.delegate.FetchSourceSet(source)
+}
+
 type BadPayloadSize struct {
 	limit int
 	size  int

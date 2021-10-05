@@ -171,15 +171,15 @@ func (m *InfluxMetrics) RecordGetDuration(duration time.Duration) {
 	m.Gets.Duration.Update(duration)
 }
 
-func (m *InfluxMetrics) RecordPutBackendXml() {
+func (m *InfluxMetrics) RecordPutBackendXml(source string) {
 	m.PutsBackend.XmlRequest.Mark(1)
 }
 
-func (m *InfluxMetrics) RecordPutBackendJson() {
+func (m *InfluxMetrics) RecordPutBackendJson(source string) {
 	m.PutsBackend.JsonRequest.Mark(1)
 }
 
-func (m *InfluxMetrics) RecordPutBackendInvalid() {
+func (m *InfluxMetrics) RecordPutBackendInvalid(source string) {
 	m.PutsBackend.InvalidRequest.Mark(1)
 }
 
@@ -191,11 +191,11 @@ func (m *InfluxMetrics) RecordPutBackendTTLSeconds(duration time.Duration) {
 	m.PutsBackend.RequestTTL.Update(duration)
 }
 
-func (m *InfluxMetrics) RecordPutBackendError() {
+func (m *InfluxMetrics) RecordPutBackendError(source string) {
 	m.PutsBackend.Errors.Mark(1)
 }
 
-func (m *InfluxMetrics) RecordGetBackendTotal() {
+func (m *InfluxMetrics) RecordGetBackendTotal(source string) {
 	m.GetsBackend.Request.Mark(1)
 }
 
@@ -207,15 +207,15 @@ func (m *InfluxMetrics) RecordGetBackendDuration(duration time.Duration) {
 	m.GetsBackend.Duration.Update(duration)
 }
 
-func (m *InfluxMetrics) RecordGetBackendError() {
+func (m *InfluxMetrics) RecordGetBackendError(source string) {
 	m.GetsBackend.Errors.Mark(1)
 }
 
-func (m *InfluxMetrics) RecordKeyNotFoundError() {
+func (m *InfluxMetrics) RecordKeyNotFoundError(source string) {
 	m.GetsErr.KeyNotFoundErrors.Mark(1)
 }
 
-func (m *InfluxMetrics) RecordMissingKeyError() {
+func (m *InfluxMetrics) RecordMissingKeyError(source string) {
 	m.GetsErr.MissingKeyErrors.Mark(1)
 }
 

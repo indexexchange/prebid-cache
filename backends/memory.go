@@ -31,6 +31,8 @@ func (b *MemoryBackend) Put(ctx context.Context, key string, value string, ttlSe
 	return nil
 }
 
+func (s *MemoryBackend) FetchSourceSet(source string) string { return "" }
+
 func NewMemoryBackend() *MemoryBackend {
 	return &MemoryBackend{
 		db: make(map[string]string),

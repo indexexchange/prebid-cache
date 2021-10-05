@@ -37,3 +37,5 @@ func (c *ttlCapturer) Put(ctx context.Context, key string, value string, ttlSeco
 func (c *ttlCapturer) Get(ctx context.Context, key string, source string) (string, error) {
 	return "", nil
 }
+
+func (c *ttlCapturer) FetchSourceSet(source string) string { return "" }

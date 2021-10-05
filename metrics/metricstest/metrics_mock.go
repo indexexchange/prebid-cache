@@ -89,19 +89,19 @@ func (m *MockMetrics) RecordGetTotal() {
 func (m *MockMetrics) RecordGetDuration(duration time.Duration) {
 	MockHistograms["gets.current_url.duration"] = mockDuration.Seconds()
 }
-func (m *MockMetrics) RecordPutBackendXml() {
+func (m *MockMetrics) RecordPutBackendXml(source string) {
 	MockCounters["puts.backends.xml"] = MockCounters["puts.backends.xml"] + 1
 }
-func (m *MockMetrics) RecordPutBackendJson() {
+func (m *MockMetrics) RecordPutBackendJson(source string) {
 	MockCounters["puts.backends.json"] = MockCounters["puts.backends.json"] + 1
 }
-func (m *MockMetrics) RecordPutBackendInvalid() {
+func (m *MockMetrics) RecordPutBackendInvalid(source string) {
 	MockCounters["puts.backends.invalid_format"] = MockCounters["puts.backends.invalid_format"] + 1
 }
 func (m *MockMetrics) RecordPutBackendDuration(duration time.Duration) {
 	MockHistograms["puts.backends.request_duration"] = mockDuration.Seconds()
 }
-func (m *MockMetrics) RecordPutBackendError() {
+func (m *MockMetrics) RecordPutBackendError(source string) {
 	MockCounters["puts.backends.request.error"] = MockCounters["puts.backends.request.error"] + 1
 }
 func (m *MockMetrics) RecordPutBackendSize(sizeInBytes float64) {
@@ -113,16 +113,16 @@ func (m *MockMetrics) RecordPutBackendTTLSeconds(duration time.Duration) {
 func (m *MockMetrics) RecordGetBackendDuration(duration time.Duration) {
 	MockHistograms["gets.backends.duration"] = mockDuration.Seconds()
 }
-func (m *MockMetrics) RecordGetBackendTotal() {
+func (m *MockMetrics) RecordGetBackendTotal(source string) {
 	MockCounters["gets.backends.request.total"] = MockCounters["gets.backends.request.total"] + 1
 }
-func (m *MockMetrics) RecordGetBackendError() {
+func (m *MockMetrics) RecordGetBackendError(source string) {
 	MockCounters["gets.backends.request.error"] = MockCounters["gets.backends.request.error"] + 1
 }
-func (m *MockMetrics) RecordKeyNotFoundError() {
+func (m *MockMetrics) RecordKeyNotFoundError(source string) {
 	MockCounters["gets.backend_error.key_not_found"] = MockCounters["gets.backend_error.key_not_found"] + 1
 }
-func (m *MockMetrics) RecordMissingKeyError() {
+func (m *MockMetrics) RecordMissingKeyError(source string) {
 	MockCounters["gets.backend_error.missing_key"] = MockCounters["gets.backend_error.missing_key"] + 1
 }
 func (m *MockMetrics) RecordConnectionOpen() {

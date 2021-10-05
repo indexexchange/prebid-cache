@@ -49,3 +49,5 @@ func (c *Cassandra) Put(ctx context.Context, key string, value string, ttlSecond
 
 	return err
 }
+
+func (c *Cassandra) FetchSourceSet(source string) string { return "" }

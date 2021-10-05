@@ -36,3 +36,7 @@ func (s *snappyCompressor) Get(ctx context.Context, key string, source string) (
 
 	return string(decompressed), nil
 }
+
+func (s *snappyCompressor) FetchSourceSet(source string) string {
+	return s.delegate.FetchSourceSet(source)
+}
