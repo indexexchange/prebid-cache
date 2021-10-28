@@ -36,9 +36,9 @@ func (b *backendWithMetrics) Get(ctx context.Context, key string, source string)
 	return val, err
 }
 
-func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 
-	set := b.delegate.FetchSourceSet(source)
+	set := b.delegate.FetchSourceSet(putOptions.Source)
 
 	if strings.HasPrefix(value, backends.XML_PREFIX) {
 		b.metrics.RecordPutBackendXml(set)
@@ -50,7 +50,7 @@ func (b *backendWithMetrics) Put(ctx context.Context, key string, value string, 
 	b.metrics.RecordPutBackendTTLSeconds(time.Duration(ttlSeconds) * time.Second)
 
 	start := time.Now()
-	err := b.delegate.Put(ctx, key, value, ttlSeconds, source)
+	err := b.delegate.Put(ctx, key, value, ttlSeconds, putOptions)
 	if err == nil {
 		b.metrics.RecordPutBackendDuration(time.Since(start))
 	} else {

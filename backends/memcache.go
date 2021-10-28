@@ -47,7 +47,7 @@ func (mc *Memcache) Get(ctx context.Context, key string, source string) (string,
 	return string(res.Value), nil
 }
 
-func (mc *Memcache) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (mc *Memcache) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions PutOptions) error {
 	err := mc.client.Set(&memcache.Item{
 		Expiration: int32(ttlSeconds),
 		Key:        key,

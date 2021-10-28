@@ -42,7 +42,7 @@ func (c *Cassandra) Get(ctx context.Context, key string, source string) (string,
 	return res, err
 }
 
-func (c *Cassandra) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (c *Cassandra) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions PutOptions) error {
 	err := c.session.Query(`INSERT INTO cache (key, value) VALUES (?, ?) USING TTL ?`, key, value, ttlSeconds).
 		WithContext(ctx).
 		Exec()

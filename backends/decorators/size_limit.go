@@ -25,7 +25,7 @@ func (b *sizeCappedBackend) Get(ctx context.Context, key string, source string) 
 	return b.delegate.Get(ctx, key, source)
 }
 
-func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 	valueLen := len(value)
 	if valueLen == 0 || valueLen > b.limit {
 		return &BadPayloadSize{
@@ -34,7 +34,7 @@ func (b *sizeCappedBackend) Put(ctx context.Context, key string, value string, t
 		}
 	}
 
-	return b.delegate.Put(ctx, key, value, ttlSeconds, source)
+	return b.delegate.Put(ctx, key, value, ttlSeconds, putOptions)
 }
 
 func (s *sizeCappedBackend) FetchSourceSet(source string) string {
