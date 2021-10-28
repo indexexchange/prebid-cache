@@ -52,6 +52,8 @@ func setConfigDefaults(v *viper.Viper) {
 	v.SetDefault("backend.aerospike.user", "")
 	v.SetDefault("backend.aerospike.password", "")
 	v.SetDefault("backend.aerospike.default_ttl_seconds", 0)
+	v.SetDefault("backend.aerospike.write_timeout_ms", 10)
+	v.SetDefault("backend.aerospike.write_retries", 1)
 	v.SetDefault("backend.cassandra.hosts", "")
 	v.SetDefault("backend.cassandra.keyspace", "")
 	v.SetDefault("backend.memcache.hosts", []string{})

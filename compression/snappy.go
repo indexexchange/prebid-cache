@@ -19,8 +19,8 @@ type snappyCompressor struct {
 	delegate backends.Backend
 }
 
-func (s *snappyCompressor) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
-	return s.delegate.Put(ctx, key, string(snappy.Encode(nil, []byte(value))), ttlSeconds, source)
+func (s *snappyCompressor) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
+	return s.delegate.Put(ctx, key, string(snappy.Encode(nil, []byte(value))), ttlSeconds, putOptions)
 }
 
 func (s *snappyCompressor) Get(ctx context.Context, key string, source string) (string, error) {

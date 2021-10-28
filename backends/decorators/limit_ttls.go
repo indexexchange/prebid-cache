@@ -19,9 +19,9 @@ type ttlLimited struct {
 	maxTTLSeconds int
 }
 
-func (l ttlLimited) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (l ttlLimited) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 	if l.maxTTLSeconds > ttlSeconds {
-		return l.Backend.Put(ctx, key, value, ttlSeconds, source)
+		return l.Backend.Put(ctx, key, value, ttlSeconds, putOptions)
 	}
-	return l.Backend.Put(ctx, key, value, l.maxTTLSeconds, source)
+	return l.Backend.Put(ctx, key, value, l.maxTTLSeconds, putOptions)
 }

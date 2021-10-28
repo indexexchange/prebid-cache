@@ -60,7 +60,7 @@ func (redis *Redis) Get(ctx context.Context, key string, source string) (string,
 	return string(res), nil
 }
 
-func (redis *Redis) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (redis *Redis) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions PutOptions) error {
 	err := redis.client.Set(key, value, time.Duration(ttlSeconds)*time.Second).Err()
 
 	if err != nil {

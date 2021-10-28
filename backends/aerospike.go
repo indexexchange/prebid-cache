@@ -3,6 +3,7 @@ package backends
 import (
 	"context"
 	"errors"
+	"time"
 
 	as "github.com/aerospike/aerospike-client-go"
 	as_types "github.com/aerospike/aerospike-client-go/types"
@@ -39,11 +40,12 @@ func (db *AerospikeDBClient) NewUuidKey(namespace string, setName string, key st
 
 // Instantiates, and configures the Aerospike client, it also performs Get and Put operations and monitors results
 type AerospikeBackend struct {
-	namespace  string
-	client     AerospikeDB
-	metrics    *metrics.Metrics
-	defaultSet string
-	customSets map[string]string
+	namespace         string
+	client            AerospikeDB
+	metrics           *metrics.Metrics
+	defaultSet        string
+	customSets        map[string]string
+	defaultPutOptions PutOptions
 }
 
 func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *AerospikeBackend {
@@ -82,6 +84,10 @@ func NewAerospikeBackend(cfg config.Aerospike, metrics *metrics.Metrics) *Aerosp
 		metrics:    metrics,
 		defaultSet: cfg.DefaultSet,
 		customSets: cfg.CustomSets,
+		defaultPutOptions: PutOptions{
+			WriteTimeoutMs: cfg.WriteTimeoutMs,
+			WriteRetries:   cfg.WriteRetries,
+		},
 	}
 
 }
@@ -125,9 +131,9 @@ func (a *AerospikeBackend) Get(ctx context.Context, key string, source string) (
 	return str, nil
 }
 
-func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions PutOptions) error {
 
-	setName := a.FetchSourceSet(source)
+	setName := a.FetchSourceSet(putOptions.Source)
 
 	asKey, err := a.client.NewUuidKey(a.namespace, setName, key)
 	if err != nil {
@@ -135,7 +141,20 @@ func (a *AerospikeBackend) Put(ctx context.Context, key string, value string, tt
 	}
 
 	bins := as.BinMap{binValue: value}
-	policy := &as.WritePolicy{Expiration: uint32(ttlSeconds)}
+	policy := &as.WritePolicy{
+		BasePolicy: as.BasePolicy{
+			TotalTimeout: time.Duration(a.defaultPutOptions.WriteTimeoutMs) * time.Millisecond,
+			MaxRetries:   a.defaultPutOptions.WriteRetries,
+		},
+		Expiration: uint32(ttlSeconds),
+	}
+
+	if putOptions.WriteTimeoutMs != 0 {
+		policy.TotalTimeout = time.Duration(putOptions.WriteTimeoutMs) * time.Millisecond
+	}
+	if putOptions.WriteRetries != 0 {
+		policy.MaxRetries = putOptions.WriteRetries
+	}
 
 	if err := a.client.Put(policy, asKey, bins); err != nil {
 		return formatAerospikeError(err)

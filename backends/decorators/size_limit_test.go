@@ -3,18 +3,20 @@ package decorators
 import (
 	"context"
 	"testing"
+
+	"github.com/prebid/prebid-cache/backends"
 )
 
 func TestLargePayload(t *testing.T) {
 	delegate := &successfulBackend{}
 	wrapped := EnforceSizeLimit(delegate, 5)
-	assertBadPayloadError(t, wrapped.Put(context.Background(), "foo", "123456", 0, "defaultSet"))
+	assertBadPayloadError(t, wrapped.Put(context.Background(), "foo", "123456", 0, backends.PutOptions{Source: "defaultSet"}))
 }
 
 func TestAcceptablePayload(t *testing.T) {
 	delegate := &successfulBackend{}
 	wrapped := EnforceSizeLimit(delegate, 5)
-	assertNilError(t, wrapped.Put(context.Background(), "foo", "12345", 0, "defaultSet"))
+	assertNilError(t, wrapped.Put(context.Background(), "foo", "12345", 0, backends.PutOptions{Source: "defaultSet"}))
 }
 
 func assertBadPayloadError(t *testing.T, err error) {
@@ -42,7 +44,7 @@ func (b *successfulBackend) Get(ctx context.Context, key string, source string) 
 	return "some-value", nil
 }
 
-func (b *successfulBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (b *successfulBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 	return nil
 }
 

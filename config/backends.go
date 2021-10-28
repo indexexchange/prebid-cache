@@ -45,15 +45,17 @@ const (
 )
 
 type Aerospike struct {
-	DefaultTTL int               `mapstructure:"default_ttl_seconds"`
-	Host       string            `mapstructure:"host"`
-	Hosts      []string          `mapstructure:"hosts"`
-	Port       int               `mapstructure:"port"`
-	Namespace  string            `mapstructure:"namespace"`
-	DefaultSet string            `mapstructure:"default_set"`
-	User       string            `mapstructure:"user"`
-	Password   string            `mapstructure:"password"`
-	CustomSets map[string]string `mapstructure:"custom_sets"`
+	DefaultTTL     int               `mapstructure:"default_ttl_seconds"`
+	Host           string            `mapstructure:"host"`
+	Hosts          []string          `mapstructure:"hosts"`
+	Port           int               `mapstructure:"port"`
+	Namespace      string            `mapstructure:"namespace"`
+	DefaultSet     string            `mapstructure:"default_set"`
+	User           string            `mapstructure:"user"`
+	Password       string            `mapstructure:"password"`
+	CustomSets     map[string]string `mapstructure:"custom_sets"`
+	WriteTimeoutMs int               `mapstructure:"write_timeout_ms"`
+	WriteRetries   int               `mapstructure:"write_retries"`
 }
 
 func (cfg *Aerospike) validateAndLog() error {

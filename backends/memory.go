@@ -23,7 +23,7 @@ func (b *MemoryBackend) Get(ctx context.Context, key string, source string) (str
 	return v, nil
 }
 
-func (b *MemoryBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (b *MemoryBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions PutOptions) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

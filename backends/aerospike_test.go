@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	as "github.com/aerospike/aerospike-client-go"
 	as_types "github.com/aerospike/aerospike-client-go/types"
@@ -53,16 +54,20 @@ func (c *errorProneAerospikeClient) Put(policy *as.WritePolicy, key *as.Key, bin
 
 // Mock Aerospike client that does not throw errors
 type goodAerospikeClient struct {
-	records map[string]*as.Record
+	records                map[string]*as.Record
+	expectedWriteTimeoutMs int
+	expectedRetries        int
 }
 
-func NewGoodAerospikeClient() *goodAerospikeClient {
+func NewGoodAerospikeClient(expectedWriteTimeoutMs int, expectedRetries int) *goodAerospikeClient {
 	return &goodAerospikeClient{
 		records: map[string]*as.Record{
-			"defaultKey": &as.Record{
+			"defaultKey": {
 				Bins: as.BinMap{binValue: "Default value"},
 			},
 		},
+		expectedWriteTimeoutMs: expectedWriteTimeoutMs,
+		expectedRetries:        expectedRetries,
 	}
 }
 
@@ -79,6 +84,9 @@ func (c *goodAerospikeClient) Get(aeKey *as.Key) (*as.Record, error) {
 }
 
 func (c *goodAerospikeClient) Put(policy *as.WritePolicy, aeKey *as.Key, binMap as.BinMap) error {
+	if policy.TotalTimeout != time.Duration(c.expectedWriteTimeoutMs)*time.Millisecond || policy.MaxRetries != c.expectedRetries {
+		return as_types.NewAerospikeError(as_types.ILLEGAL_STATE)
+	}
 	if aeKey != nil && aeKey.Value() != nil {
 		key := aeKey.Value().String()
 		c.records[key] = &as.Record{
@@ -330,7 +338,7 @@ func TestClientGet(t *testing.T) {
 		},
 		{
 			desc:              "AerospikeBackend.Get() does not throw error",
-			inAerospikeClient: NewGoodAerospikeClient(),
+			inAerospikeClient: NewGoodAerospikeClient(0, 0),
 			expectedValue:     "Default value",
 			expectedErrorMsg:  "",
 		},
@@ -360,12 +368,15 @@ func TestClientPut(t *testing.T) {
 	}
 
 	testCases := []struct {
-		desc              string
-		inAerospikeClient AerospikeDB
-		inKey             string
-		inValueToStore    string
-		expectedStoredVal string
-		expectedErrorMsg  string
+		desc                    string
+		inAerospikeClient       AerospikeDB
+		inKey                   string
+		inValueToStore          string
+		inDefaultWriteTimeoutMs int
+		inDefaultWriteRetries   int
+		inPutOptions            PutOptions
+		expectedStoredVal       string
+		expectedErrorMsg        string
 	}{
 		{
 			desc:              "AerospikeBackend.Put() throws error when trying to generate new key",
@@ -384,21 +395,37 @@ func TestClientPut(t *testing.T) {
 			expectedErrorMsg:  "Key already exists",
 		},
 		{
-			desc:              "AerospikeBackend.Put() does not throw error",
-			inAerospikeClient: NewGoodAerospikeClient(),
-			inKey:             "testKey",
-			inValueToStore:    "any value",
-			expectedStoredVal: "any value",
-			expectedErrorMsg:  "",
+			desc:                    "AerospikeBackend.Put() does not throw error and uses backend defaults",
+			inAerospikeClient:       NewGoodAerospikeClient(10, 2),
+			inKey:                   "testKey",
+			inValueToStore:          "any value",
+			inDefaultWriteTimeoutMs: 10,
+			inDefaultWriteRetries:   2,
+			inPutOptions:            PutOptions{Source: "defaultSet"},
+			expectedStoredVal:       "any value",
+			expectedErrorMsg:        "",
+		},
+		{
+			desc:                    "AerospikeBackend.Put() does not throw error and uses overridden options",
+			inAerospikeClient:       NewGoodAerospikeClient(1, 1),
+			inKey:                   "testKey",
+			inValueToStore:          "any value",
+			inDefaultWriteTimeoutMs: 10,
+			inDefaultWriteRetries:   2,
+			inPutOptions:            PutOptions{WriteTimeoutMs: 1, WriteRetries: 1, Source: "defaultSet"},
+			expectedStoredVal:       "any value",
+			expectedErrorMsg:        "",
 		},
 	}
 
 	for _, tt := range testCases {
 		// Assign aerospike backend cient
 		aerospikeBackend.client = tt.inAerospikeClient
+		aerospikeBackend.defaultPutOptions.WriteTimeoutMs = tt.inDefaultWriteTimeoutMs
+		aerospikeBackend.defaultPutOptions.WriteRetries = tt.inDefaultWriteRetries
 
 		// Run test
-		actualErr := aerospikeBackend.Put(context.TODO(), tt.inKey, tt.inValueToStore, 0, "defaultSet")
+		actualErr := aerospikeBackend.Put(context.TODO(), tt.inKey, tt.inValueToStore, 0, tt.inPutOptions)
 
 		// Assert Put error
 		if tt.expectedErrorMsg != "" {

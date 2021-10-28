@@ -562,7 +562,7 @@ func (b *mockBackend) Get(ctx context.Context, key string, source string) (strin
 	return v, nil
 }
 
-func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, source string) error {
+func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 	b.data[key] = value
 	return nil
 }

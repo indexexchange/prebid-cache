@@ -106,8 +106,11 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 			// Eventually we may want to provide error details, but as of today this is the only non-fatal error
 			// Future error details could go into a second property of the Responses object, such as "errors"
 			if len(resps.Responses[i].UUID) > 0 {
+				if len(p.Source) != 0 {
+					put.Options.Source = p.Source
+				}
 
-				err = backend.Put(ctx, resps.Responses[i].UUID, toCache, p.TTLSeconds, p.Source)
+				err = backend.Put(ctx, resps.Responses[i].UUID, toCache, p.TTLSeconds, put.Options)
 				if err != nil {
 					if _, ok := err.(*backendDecorators.BadPayloadSize); ok {
 						http.Error(w, fmt.Sprintf("POST /cache element %d exceeded max size: %v", i, err), http.StatusBadRequest)
@@ -143,7 +146,8 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 }
 
 type PutRequest struct {
-	Puts []PutObject `json:"puts"`
+	Puts    []PutObject         `json:"puts"`
+	Options backends.PutOptions `json:"put_options,omitempty"`
 }
 
 type PutObject struct {
@@ -151,7 +155,8 @@ type PutObject struct {
 	TTLSeconds int             `json:"ttlseconds"`
 	Value      json.RawMessage `json:"value"`
 	Key        string          `json:"key"`
-	Source     string          `json:"source",omitempty`
+	// TODO: Migrate all users of source to PutOptions.Source and clean this up.
+	Source string `json:"source,omitempty"`
 }
 
 type PutResponseObject struct {
