@@ -88,7 +88,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 			}
 
 			if resps.Responses[i].UUID, err = utils.GenerateRandomId(); err != nil {
-				http.Error(w, fmt.Sprintf("Error generating version 4 UUID"), http.StatusInternalServerError)
+				http.Error(w, "Error generating version 4 UUID", http.StatusInternalServerError)
 			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)

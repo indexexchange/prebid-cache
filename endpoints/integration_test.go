@@ -322,6 +322,7 @@ func TestGetHandler(t *testing.T) {
 
 	// Lower Log Treshold so we can see DebugLevel entries in our mock logrus log
 	logrus.SetLevel(logrus.DebugLevel)
+	assert := assert.New(t)
 
 	// Test suite-wide objects
 	hook := test.NewGlobal()
@@ -335,7 +336,7 @@ func TestGetHandler(t *testing.T) {
 		fatal = false
 
 		// Set up test object
-		backend := newMockBackend()
+		backend := newMockBackend(assert, backends.PutOptions{})
 		router := httprouter.New()
 		router.GET("/cache", NewGetHandler(backend, test.in.allowKeys))
 
@@ -343,17 +344,17 @@ func TestGetHandler(t *testing.T) {
 		getResults := doMockGet(t, router, test.in.uuid, test.in.urlFormat)
 
 		// Assert server response and status code
-		assert.Equal(t, test.out.responseCode, getResults.Code, test.desc)
-		assert.Equal(t, test.out.responseBody, getResults.Body.String(), test.desc)
+		assert.Equal(test.out.responseCode, getResults.Code, test.desc)
+		assert.Equal(test.out.responseBody, getResults.Body.String(), test.desc)
 
 		// Assert log entries
-		if assert.Len(t, hook.Entries, len(test.out.logEntries), test.desc) {
+		if assert.Len(hook.Entries, len(test.out.logEntries), test.desc) {
 			for i := 0; i < len(test.out.logEntries); i++ {
-				assert.Equal(t, test.out.logEntries[i].msg, hook.Entries[i].Message, test.desc)
-				assert.Equal(t, test.out.logEntries[i].lvl, hook.Entries[i].Level, test.desc)
+				assert.Equal(test.out.logEntries[i].msg, hook.Entries[i].Message, test.desc)
+				assert.Equal(test.out.logEntries[i].lvl, hook.Entries[i].Level, test.desc)
 			}
 			// Assert the logger didn't exit the program
-			assert.False(t, fatal, test.desc)
+			assert.False(fatal, test.desc)
 		}
 
 		// Reset log
@@ -416,7 +417,7 @@ func TestMultiPutRequestGotStored(t *testing.T) {
 
 	// validate results
 	var parsed PutResponse
-	err = json.Unmarshal([]byte(rr.Body.String()), &parsed)
+	err = json.Unmarshal(rr.Body.Bytes(), &parsed)
 	assert.NoError(t, err, "Response from POST doesn't conform to the expected format: %s", rr.Body.String())
 
 	for i, resp := range parsed.Responses {
@@ -483,7 +484,7 @@ func TestEmptyPutRequests(t *testing.T) {
 		}
 
 		var parsed PutResponse
-		err2 := json.Unmarshal([]byte(rr.Body.String()), &parsed)
+		err2 := json.Unmarshal(rr.Body.Bytes(), &parsed)
 		assert.NoError(t, err2, "[%d] Error found trying to unmarshal: %s \n", i, rr.Body.String())
 
 		if test.emptyResponses {
@@ -491,6 +492,81 @@ func TestEmptyPutRequests(t *testing.T) {
 		} else {
 			assert.Greater(t, len(parsed.Responses), 0, "[%d] This is an empty response len(parsed.Responses) = %d; parsed.Responses = %v \n", i, len(parsed.Responses), parsed.Responses)
 		}
+	}
+}
+
+func TestPutHandler(t *testing.T) {
+	type testInput struct {
+		allowKeys  bool
+		putRequest PutRequest
+	}
+	type testOutput struct {
+		responseCode int
+	}
+
+	testCases := []struct {
+		desc string
+		in   testInput
+		out  testOutput
+	}{
+		{
+			"Base PUT with Options",
+			testInput{
+				putRequest: PutRequest{
+					Puts: []PutObject{
+						{Type: "json", Value: []byte("{}")},
+					},
+					Options: backends.PutOptions{
+						Source:         "pbjs",
+						WriteTimeoutMs: 10,
+						WriteRetries:   1,
+					},
+				},
+			},
+			testOutput{
+				responseCode: http.StatusOK,
+			},
+		}, {
+			"PUT with Legacy Source Declaration",
+			testInput{
+				putRequest: PutRequest{
+					Puts: []PutObject{
+						{Type: "json", Value: []byte("{}"), Source: "ixl"},
+					},
+					Options: backends.PutOptions{
+						Source:         "pbjs",
+						WriteTimeoutMs: 10,
+						WriteRetries:   1,
+					},
+				},
+			},
+			testOutput{
+				responseCode: http.StatusOK,
+			},
+		},
+	}
+	assert := assert.New(t)
+
+	for _, test := range testCases {
+		// Set up test object
+		backend := newMockBackend(assert, test.in.putRequest.Options)
+		// Verify per-put source overrides putOptions source
+		if len(test.in.putRequest.Puts[0].Source) != 0 {
+			backend.expectedPutOptions.Source = test.in.putRequest.Puts[0].Source
+		}
+
+		router := httprouter.New()
+		router.POST("/cache", NewPutHandler(backend, 10, test.in.allowKeys))
+
+		putContent, err := json.Marshal(test.in.putRequest)
+		assert.NoError(err)
+
+		// Run test
+		uuid, putResults := doMockPut(t, router, string(putContent))
+
+		// Assert server response and status code
+		assert.Equal(test.out.responseCode, putResults.Code, test.desc)
+		assert.NotEmpty(uuid, "expected a UUID in response")
 	}
 }
 
@@ -551,7 +627,9 @@ func BenchmarkPutHandlerLen8(b *testing.B) {
 }
 
 type mockBackend struct {
-	data map[string]string
+	assert             *assert.Assertions
+	data               map[string]string
+	expectedPutOptions backends.PutOptions
 }
 
 func (b *mockBackend) Get(ctx context.Context, key string, source string) (string, error) {
@@ -564,17 +642,20 @@ func (b *mockBackend) Get(ctx context.Context, key string, source string) (strin
 
 func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeconds int, putOptions backends.PutOptions) error {
 	b.data[key] = value
+	b.assert.Equal(b.expectedPutOptions, putOptions)
 	return nil
 }
 
 func (c *mockBackend) FetchSourceSet(source string) string { return "" }
 
-func newMockBackend() *mockBackend {
+func newMockBackend(assert *assert.Assertions, expectedPutOptions backends.PutOptions) *mockBackend {
 	return &mockBackend{
+		assert: assert,
 		data: map[string]string{
 			"non-36-char-key-maps-to-json":         `json{"field":"value"}`,
 			"36-char-key-maps-to-non-xml-nor-json": `#@!*{"desc":"data got malformed and is not prefixed with 'xml' nor 'json' substring"}`,
 			"36-char-key-maps-to-actual-xml-value": "xml<tag>xml data here</tag>",
 		},
+		expectedPutOptions: expectedPutOptions,
 	}
 }
