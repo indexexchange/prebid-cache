@@ -1,4 +1,4 @@
-FROM ubuntu:18.04 AS build
+FROM registry.indexexchange.com:5000/ubuntu:18.04 AS build
 RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y wget
@@ -22,7 +22,7 @@ ARG TEST="true"
 RUN if [ "$TEST" != "false" ]; then ./validate.sh ; fi
 RUN go build -mod=vendor .
 
-FROM ubuntu:18.04 AS release
+FROM registry.indexexchange.com:5000/ubuntu:18.04 AS release
 LABEL maintainer="hans.hjort@xandr.com" 
 RUN apt-get update && \
     apt-get install --assume-yes apt-utils && \
