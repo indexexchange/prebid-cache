@@ -41,6 +41,7 @@ func NewPutHandler(backend backends.Backend, maxNumValues int, allowKeys bool) f
 
 		put := putAnyRequestPool.Get().(*PutRequest)
 		put.Puts = make([]PutObject, 0)
+		put.Options = backends.PutOptions{}
 		defer putAnyRequestPool.Put(put)
 
 		err = json.Unmarshal(body, put)
