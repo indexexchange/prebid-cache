@@ -331,12 +331,13 @@ func TestGetHandler(t *testing.T) {
 	var fatal bool
 	logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
 
+	backend := newMockBackend(assert)
+
 	for _, test := range testCases {
 		// Reset the fatal flag to false every test
 		fatal = false
 
 		// Set up test object
-		backend := newMockBackend(assert, backends.PutOptions{})
 		router := httprouter.New()
 		router.GET("/cache", NewGetHandler(backend, test.in.allowKeys))
 
@@ -497,7 +498,6 @@ func TestEmptyPutRequests(t *testing.T) {
 
 func TestPutHandler(t *testing.T) {
 	type testInput struct {
-		allowKeys  bool
 		putRequest PutRequest
 	}
 	type testOutput struct {
@@ -534,9 +534,21 @@ func TestPutHandler(t *testing.T) {
 						{Type: "json", Value: []byte("{}"), Source: "ixl"},
 					},
 					Options: backends.PutOptions{
-						Source:         "pbjs",
-						WriteTimeoutMs: 10,
+						Source:         "ixl",
+						WriteTimeoutMs: 20,
 						WriteRetries:   1,
+					},
+				},
+			},
+			testOutput{
+				responseCode: http.StatusOK,
+			},
+		}, {
+			"PUT with no options",
+			testInput{
+				putRequest: PutRequest{
+					Puts: []PutObject{
+						{Type: "json", Value: []byte("{}")},
 					},
 				},
 			},
@@ -546,17 +558,19 @@ func TestPutHandler(t *testing.T) {
 		},
 	}
 	assert := assert.New(t)
+	// Set up test object
+	backend := newMockBackend(assert)
+	putHandler := NewPutHandler(backend, 10, true)
 
 	for _, test := range testCases {
-		// Set up test object
-		backend := newMockBackend(assert, test.in.putRequest.Options)
+		backend.expectedPutOptions = test.in.putRequest.Options
 		// Verify per-put source overrides putOptions source
 		if len(test.in.putRequest.Puts[0].Source) != 0 {
 			backend.expectedPutOptions.Source = test.in.putRequest.Puts[0].Source
 		}
 
 		router := httprouter.New()
-		router.POST("/cache", NewPutHandler(backend, 10, test.in.allowKeys))
+		router.POST("/cache", putHandler)
 
 		putContent, err := json.Marshal(test.in.putRequest)
 		assert.NoError(err)
@@ -648,7 +662,7 @@ func (b *mockBackend) Put(ctx context.Context, key string, value string, ttlSeco
 
 func (c *mockBackend) FetchSourceSet(source string) string { return "" }
 
-func newMockBackend(assert *assert.Assertions, expectedPutOptions backends.PutOptions) *mockBackend {
+func newMockBackend(assert *assert.Assertions) *mockBackend {
 	return &mockBackend{
 		assert: assert,
 		data: map[string]string{
@@ -656,6 +670,5 @@ func newMockBackend(assert *assert.Assertions, expectedPutOptions backends.PutOp
 			"36-char-key-maps-to-non-xml-nor-json": `#@!*{"desc":"data got malformed and is not prefixed with 'xml' nor 'json' substring"}`,
 			"36-char-key-maps-to-actual-xml-value": "xml<tag>xml data here</tag>",
 		},
-		expectedPutOptions: expectedPutOptions,
 	}
 }
