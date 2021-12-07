@@ -1,0 +1,86 @@
+image: "registry.indexexchange.com:5000/ci-environments/golang-ci:1.16.8"
+before_script:
+  - cd $CI_PROJECT_DIR
+variables:
+  ANSIBLE_ROOT: parallel-bidding-common/ansible
+  ANSIBLE_PLAYBOOK_FILE: prebid-cache.yml
+  IMAGE_NAME: "prebid/prebid-cache"
+  IMAGE_TAG: $CI_COMMIT_TAG
+
+stages:
+  - lint
+  - build
+  - test
+  - push images
+  - deploy to test
+  - deploy to staging
+  - deploy to prod
+
+include:
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-jobs/lint/mrtitle.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-jobs/lint/gofmt.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-jobs/lint/golint.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-jobs/build/gobuild.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-jobs/test/gotest.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-templates/jobs/push-to-registry.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-templates/rules/version-tag-triggered.yml'
+  - project: 'parallel-bidding/parallel-bidding-common'
+    ref: master
+    file: '/ci-templates/jobs/deploy.yml'
+
+gofmt:
+  # While still converging from open-source, we may have failures.
+  allow_failure: true
+
+golint:
+  # While still converging from open-source, we may have failures.
+  allow_failure: true
+
+gotest:
+  variables:
+    TEST_TIMEOUT: 120s
+
+push release images to registry:
+  extends:
+    - .push_to_registry
+    - .version_tag_triggered
+
+deploy to test:
+  stage: deploy to test
+  extends:
+    - .deploy_template
+    - .version_tag_triggered
+  variables:
+    DEPLOY_TO: test
+
+# This step requires manual approval to proceed once image is pushed to registry.
+deploy to staging:
+  stage: deploy to staging
+  extends:
+    - .deploy_template
+    - .version_tag_triggered_manual
+  variables:
+    DEPLOY_TO: staging
+
+# This step requires manual approval to proceed once staging environment is validated.
+deploy to prod:
+  stage: deploy to prod
+  extends:
+    - .deploy_template
+    - .version_tag_triggered_manual
+  variables:
+    DEPLOY_TO: prod

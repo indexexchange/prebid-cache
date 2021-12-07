@@ -1,0 +1,3 @@
+# Copy group_var setup from production version to ensure we properly override
+# https://gitlab.indexexchange.com/operations/inventory/-/blob/master/group_vars/all
+ansible_user: root

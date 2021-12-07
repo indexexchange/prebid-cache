@@ -1,0 +1,1 @@
+prebid_server_adapters_ix_endpoint: "http://{{ pdc_name | lower }}-ent.lb.indexww.com/pbs?p=192919"

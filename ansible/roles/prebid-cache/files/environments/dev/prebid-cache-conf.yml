@@ -1,0 +1,28 @@
+port: 8092
+admin_port: 2525
+log:
+  level: "debug"
+rate_limiter:
+  enabled: false
+  num_requests: 100
+request_limits:
+  allow_setting_keys: true
+  # TODO(PB-680): Determine if we can lower this based on production data.
+  max_size_bytes: 1048576 # 1MB
+  max_num_values: 10
+  max_ttl_seconds: 3600
+backend:
+  type: "aerospike" # Can also be "memory", "azure", "cassandra", "memcache" or "redis"
+  aerospike:
+    hosts: ["aerospike"]
+    port: 3000
+    namespace: "dc-cache"
+    set: "prebid-cache"
+    # This is an aerospike enterprise feature only
+    # user: "admin"
+    # password: "admin"
+    default_ttl_seconds: 3600
+compression:
+  type: "snappy" # Can also be "none"
+metrics:
+  type: "none" # Can also be "influx"

@@ -1,0 +1,15 @@
+# Example from project root:
+# $ PREBID_CACHE_VERSION=$(cat PREBID_CACHE_VERSION)
+# $ ansible-playbook ansible/prebid-cache.yml --inventory=ansible/inventory/hosts.txt --extra-vars="env=test job=install force=no version=$VERSION" --limit="video_proxy"
+
+- hosts: "video_proxy:video_proxy_staging"
+  roles:
+    - { role: prebid-cache }
+  vars:
+    - user: video_proxy
+    - ansible_user: "{{ user }}"
+    - prebid_cache_image: "{{ 'pr' if env == 'prod' else 'ir' }}.indexexchange.com:5000/prebid/prebid-cache:{{ version }}"
+    - aerospike_image: "{{ 'pr' if env == 'prod' else 'ir' }}.indexexchange.com:5000/prebid/aerospike:{{ prebid_aerospike_version }}"
+
+  serial:
+    - 10

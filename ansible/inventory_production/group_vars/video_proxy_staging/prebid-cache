@@ -1,0 +1,1 @@
+prebid_cache_backend_aerospike_hosts: "{{ groups['pdc' + pdcID|string + '_aerospike_cluster'] }}"

@@ -1,0 +1,11 @@
+- debug:
+    msg: "Starting {{ job }} on {{ ansible_hostname }}"
+
+- import_tasks: install.yml
+  when: job == "install"
+
+- import_tasks: uninstall.yml
+  when: job == "uninstall"
+
+- debug:
+    msg: "Finished {{ job }} servers"

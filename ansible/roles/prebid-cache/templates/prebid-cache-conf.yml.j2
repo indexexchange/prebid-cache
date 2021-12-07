@@ -1,0 +1,44 @@
+port: {{ prebid_cache_port }}
+admin_port: {{ prebid_cache_admin_port }}
+log:
+  level: {{ prebid_cache_log_level }}
+rate_limiter:
+  enabled: {{ prebid_cache_rate_limiter_enabled }}
+  num_requests: {{ prebid_cache_rate_limiter_num_requests }}
+request_limits:
+  allow_setting_keys: {{ prebid_cache_request_limits_allow_setting_keys }}
+  max_size_bytes: {{ prebid_cache_request_limits_max_size_bytes }}
+  max_num_values: {{ prebid_cache_request_limits_max_num_values }}
+  max_ttl_seconds: {{ prebid_cache_request_limits_max_ttl_seconds }}
+
+backend:
+  type: {{ prebid_cache_backend_type }}
+{% if prebid_cache_backend_type == "aerospike" %}
+  aerospike:
+    hosts:  ['{{ prebid_cache_backend_aerospike_hosts | list | join ('\',\'') }}'] 
+    port: {{ prebid_cache_backend_aerospike_port }}
+    namespace: {{ prebid_cache_backend_aerospike_namespace }}
+    default_set:  "uuid"
+    custom_sets:
+      - ixl: ixl
+      - pbjs: pbjs
+      - audit: audit
+      - amp: amp
+      - playlist: playlist
+{% if prebid_cache_backend_aerospike_user is defined %}
+    user: {{ prebid_cache_backend_aerospike_user }}
+{% endif %}
+{% if prebid_cache_backend_aerospike_password is defined %}
+    password: {{ prebid_cache_backend_aerospike_password }}
+{% endif %}
+{% endif %}
+compression:
+  type: {{ prebid_cache_compression_type }}
+metrics:
+  prometheus:
+    enabled: {{ prebid_cache_metrics_enabled }}
+    port: {{ prebid_cache_metrics_port }}
+    namespace: {{ prebid_cache_metrics_namespace }}
+    subsystem: {{ prebid_cache_metrics_subsystem }}
+    timeout_ms: {{ prebid_cache_metrics_timeout_ms }}
+

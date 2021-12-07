@@ -1,0 +1,3 @@
+nginx_prebid_common_server_name: prebid-test.casalemedia.com
+nginx_ssl_certificate: /src/docker.git/resources/certs/system.casalemedia.com.crt
+nginx_ssl_certificate_key: /src/docker.git/resources/certs/system.casalemedia.com.key

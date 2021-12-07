@@ -1,0 +1,5 @@
+# run containers as docker_apps user
+# see https://gitlab.indexexchange.com/operations/ansible/-/blob/master/roles/production-access/vars/service-users.yml
+docker_user_id: "20017"
+
+prebid_aerospike_version: 4.9.0.11

@@ -1,0 +1,2 @@
+# SG use the dcstat servers, and the standard port is in use by kafka
+prebid_cache_metrics_port: 9094

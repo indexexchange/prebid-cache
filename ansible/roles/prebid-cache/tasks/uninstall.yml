@@ -1,0 +1,31 @@
+- name: "Stop Prebid Cache"
+  docker_container:
+    name: prebid-cache
+    state: stopped
+    stop_timeout: 30
+    force_kill: "{{ force }}"
+  tags:
+    - video_proxy
+
+- name: "Stop Aerospike"
+  docker_container:
+    name: aerospike
+    state: stopped
+    stop_timeout: 30
+    force_kill: "{{ force }}"
+  tags:
+    - video_proxy
+  when:
+    - env == 'test'
+
+
+- name: "Remove config files"
+  file:
+    path: /home/{{ user }}/{{ item }}
+    state: absent
+    force: "{{ force }}"
+  with_items:
+    - 'prebid-cache-conf.yml'
+    - 'aerospike.conf'
+  tags:
+    - video_proxy

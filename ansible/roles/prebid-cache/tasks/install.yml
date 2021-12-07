@@ -1,0 +1,76 @@
+# Copy over all configuration files and stored requests.
+- name: "Set configuration files"
+  template:
+    src: "{{ item }}.j2"
+    dest: /home/{{ user }}/{{ item }}
+  with_items:
+    - 'prebid-cache-conf.yml'
+    - 'aerospike.conf'
+  tags:
+    - video_proxy
+
+# If any images are missing and we are pushing to prod, authenticate with PR
+# before we try to pull.
+- name: "Check images exist"
+  docker_image_info:
+    name:
+      - "{{ prebid_cache_image }}"
+  register: local_images
+
+- name: "Authenticate with PR"
+  include_role:
+    name: 'docker-access-registry-pr'
+  when:
+    - env == 'prod'
+    - local_images.images | length != 1
+
+# We only deploy this in environments where we don't have access
+# to an external aerospike cluster ie: dev/test
+- name: "Start Aerospike Image"
+  docker_container:
+    name: aerospike
+    image: "{{ aerospike_image }}"
+    recreate: no
+    restart_policy: unless-stopped
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+      - "3002:3002"
+      - "3003:3003"
+    volumes:
+      - /home/{{ user }}/aerospike.conf:/opt/aerospike/etc/aerospike.conf
+    entrypoint: ["asd", "--foreground", "--config-file", "/opt/aerospike/etc/aerospike.conf"]
+    user: "{{ docker_user_id }}"
+    network_mode: host
+  tags:
+    - video_proxy
+  when:
+    - env == 'test'
+
+# Start up containers in order of depenencies (PBC, then PBS, then Video Proxy)
+# After each, verify they came up by expecting a 204 from /status.
+- name: "Start Prebid Cache"
+  docker_container:
+    name: prebid-cache
+    image: "{{ prebid_cache_image }}"
+    recreate: yes
+    restart_policy: unless-stopped
+    ports:
+      - "{{ prebid_cache_port }}:{{ prebid_cache_port }}"
+      - "{{ prebid_cache_admin_port }}:{{prebid_cache_admin_port }}"
+      - "{{ prebid_cache_metrics_port }}:{{ prebid_cache_metrics_port }}"
+    volumes:
+      - /home/{{ user }}/prebid-cache-conf.yml:/usr/local/bin/config.yaml
+    user: "{{ docker_user_id }}"
+    network_mode: host
+  tags:
+    - video_proxy
+
+- name: "Verify Prebid Cache /status"
+  uri:
+    url: http://127.0.0.1:{{ prebid_cache_port }}/status
+    status_code: [204]
+  register: pbc_result
+  until: pbc_result.status == 204
+  retries: 12  # 12 retries * 5s = 1m
+  delay: 5

@@ -1,0 +1,36 @@
+prebid_cache_port: 8092
+prebid_cache_admin_port: 2425
+
+prebid_cache_backend_type: "aerospike" 
+
+# Seperate param to have backwards compatability in PBC
+prebid_cache_backend_aerospike_hosts: 
+  - "127.0.0.1" 
+prebid_cache_backend_aerospike_port: 3000
+prebid_cache_backend_aerospike_namespace: "prebid_cache"
+# flag not officially supported in PBC yet, PR open for it
+prebid_cache_backend_aerospike_set_name: "prebid-cache" 
+
+# This is an aerospike enterprise feature only so defaults to being empty
+# when using non enterprise aerospike containers
+# prebid_cache_backend_aerospike_user: "test" 
+# prebid_cache_backend_aerospike_password: "test" 
+
+prebid_cache_compression_type: "snappy"
+
+prebid_cache_log_level: "error"
+
+prebid_cache_metrics_enabled: true
+prebid_cache_metrics_port: 9091
+prebid_cache_metrics_namespace: "prebid"
+prebid_cache_metrics_subsystem: "cache"
+prebid_cache_metrics_timeout_ms: 1000
+
+prebid_cache_rate_limiter_enabled: false
+prebid_cache_rate_limiter_num_requests: 100
+
+prebid_cache_request_limits_allow_setting_keys: true
+# TODO(PB-680): Determine if we can lower this based on production data.
+prebid_cache_request_limits_max_size_bytes: 1048576 # 1MB
+prebid_cache_request_limits_max_num_values: 10
+prebid_cache_request_limits_max_ttl_seconds: 10800
